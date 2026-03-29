@@ -80,7 +80,7 @@ async function saveInitializedState(context: vscode.ExtensionContext, userSettin
 }
 
 async function getAvailableAnnotationReleasesFromGithub(): Promise<IDefoldAnnotationRelease[]> {
-	const response = await axios.get('https://api.github.com/repos/mikatuo/defold-lsp-annotations/releases');
+	const response = await axios.get('https://api.github.com/repos/robknopf/defold-lsp-annotations/releases');
 	if (response.status < 200 || response.status >= 300 || !response.data) {
 		throw new Error(`Failed to fetch Lua annotations for Defold API. Status code: ${response.status}`);
 	}

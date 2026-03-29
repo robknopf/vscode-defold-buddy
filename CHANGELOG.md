@@ -89,7 +89,7 @@
 - `FIX` Do not show URL autocompletion after `require` keyword
 
 ## [0.8.7] - 2023-02-26
-- `CHG` Download annotation files from [Github](https://github.com/mikatuo/defold-lsp-annotations/releases)
+- `CHG` Download annotation files from [Github](https://github.com/robknopf/defold-lsp-annotations/releases)
 - `CHG` Various improvements with annotations for dependencies
 
 ## [0.8.6] - 2023-02-24
