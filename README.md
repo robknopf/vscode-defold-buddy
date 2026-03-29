@@ -80,6 +80,18 @@ Note: you can [set a hotkey](https://code.visualstudio.com/docs/getstarted/keybi
 ![81887c48d3bad6b29c9dbb49bea0c179d652cb05](https://user-images.githubusercontent.com/7230306/222926974-5c4d7e5b-a29d-427b-a33e-abb29b09701c.gif)
 </p></details>
 
+## Configuration
+
+You can optionally configure the absolute path to the Defold executable or launcher script in VS Code settings:
+
+```json
+"defoldBuddy.editorPath": "/absolute/path/to/Defold"
+```
+
+If this setting is present, Defold Buddy will use it to open the current project directly.
+
+On Linux, if the setting is not present, Defold Buddy falls back to opening `game.project` via `xdg-open`, which requires your desktop environment to associate `game.project` with Defold.
+
 ## Hot reloading
 
 After `.script`, `.gui_script` or `.lua` files are saved they are automatically hot-reloaded if the game is running.

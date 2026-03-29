@@ -1,4 +1,5 @@
 import * as vscode from 'vscode';
+import * as path from 'path';
 
 export function getWorkspacePath(folder: string): vscode.Uri | undefined {
     if (!vscode.workspace.workspaceFolders?.length) {
@@ -73,11 +74,19 @@ export async function showTextDocument(relativePath: vscode.Uri | string, select
     }
 }
 
-import { exec, spawn, fork, execFile } from 'child_process';
+import { exec, execFile } from 'child_process';
 export async function openDefoldEditor(relativePath: string, platform: NodeJS.Platform) {
     const absolutePath = await getWorkspacePath(relativePath);
-    // TODO: it would be better to use 'spawn' or 'fork' but
-    // for that we need to know path to the executable
+    const configuredPath = vscode.workspace
+        .getConfiguration()
+        .get<string>('defoldBuddy.editorPath', '')
+        .trim();
+
+    if (configuredPath) {
+        openDefoldEditorWithConfiguredPath(configuredPath, absolutePath);
+        return;
+    }
+
     switch (platform) {
         case 'win32':
             openDefoldEditorOnWindows(absolutePath);
@@ -85,9 +94,27 @@ export async function openDefoldEditor(relativePath: string, platform: NodeJS.Pl
         case 'darwin':
             openDefoldEditorOnMac(absolutePath);
             break;
+        case 'linux':
+            openDefoldEditorOnLinux(absolutePath);
+            break;
         default:
             vscode.window.showErrorMessage(`Failed to open Defold as this feature is not implemented for '${platform}' platform. Please start it yourself and try again.`);
     }
+}
+
+function openDefoldEditorWithConfiguredPath(defoldPath: string, absolutePath: vscode.Uri | undefined) {
+    execFile(defoldPath, [absolutePath?.fsPath ?? ''], { cwd: path.dirname(defoldPath) }, (error: any, stdout: any, stderr: any) => {
+        if (error) {
+            console.log(`error: ${error.message}`);
+            vscode.window.showErrorMessage(`Failed to open Defold using configured path '${defoldPath}'.`);
+            return;
+        }
+        if (stderr) {
+            console.log(`stderr: ${stderr}`);
+            return;
+        }
+        console.log(`stdout: ${stdout}`);
+    });
 }
 
 function openDefoldEditorOnWindows(absolutePath: vscode.Uri | undefined) {
@@ -113,6 +140,21 @@ function openDefoldEditorOnMac(absolutePath: vscode.Uri | undefined) {
             if (error.message.includes(`Unable to find application named '${defoldAppName}'`)) {
                 vscode.window.showErrorMessage(`Unable to find application named '${defoldAppName.replace('.app', '')}'. Please make sure that you have it in your installed Applications to use this feature.`);
             }
+            return;
+        }
+        if (stderr) {
+            console.log(`stderr: ${stderr}`);
+            return;
+        }
+        console.log(`stdout: ${stdout}`);
+    });
+}
+
+function openDefoldEditorOnLinux(absolutePath: vscode.Uri | undefined) {
+    execFile('xdg-open', [absolutePath?.fsPath ?? ''], (error: any, stdout: any, stderr: any) => {
+        if (error) {
+            console.log(`error: ${error.message}`);
+            vscode.window.showErrorMessage('Failed to open Defold via xdg-open. Set defoldBuddy.editorPath or associate game.project with Defold.');
             return;
         }
         if (stderr) {

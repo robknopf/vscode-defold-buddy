@@ -41,6 +41,16 @@
   ],
   "main": "./out/extension.js",
   "contributes": {
+    "configuration": {
+      "title": "Defold Buddy",
+      "properties": {
+        "defoldBuddy.editorPath": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "Absolute path to the Defold editor executable or launcher script. If set, Defold Buddy will use this path to open the current project."
+        }
+      }
+    },
     "commands": [
       {
         "command": "vscode-defold-ide.initialize",
