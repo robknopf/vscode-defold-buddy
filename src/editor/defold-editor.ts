@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 const readline = require('node:readline');
 const { once } = require('node:events');
 import { DefoldEditorLogsRepository } from "../utils/defold-editor-logs-repository";
-import { openDefoldEditor } from '../utils/common';
+import { getConfiguredEditorPort, openDefoldEditor } from '../utils/common';
 import { Subject } from 'rxjs';
 import { findRunningDefoldGame } from '../utils/findRunningDefoldGame';
 import WebSocket = require('ws');
@@ -67,6 +67,12 @@ export class DefoldEditor {
 	async findRunningEditor(detectPort = true): Promise<string | undefined> {
 		let portOfRunningEditor = await getSavedPortOfRunningEditor(this.context);
 		if (portOfRunningEditor) { return portOfRunningEditor; }
+		const configuredPort = getConfiguredEditorPort();
+		if (configuredPort && await isDefoldEditorRunning(String(configuredPort))) {
+			portOfRunningEditor = String(configuredPort);
+			await savePort(this.context, portOfRunningEditor);
+			return portOfRunningEditor;
+		}
 		if (detectPort) {
 			portOfRunningEditor = await tryToFindRunningEditorPortFromLogFiles();
 		}
@@ -201,7 +207,11 @@ async function askToOpenDefoldEditorOrInputPort(): Promise<{ retry: boolean; por
 	switch (answer) {
 		case 'Open Defold':
 			await openDefoldEditor('game.project', process.platform);
-			return doNotRetryBuildingProject;
+			const configuredPort = getConfiguredEditorPort();
+			return {
+				retry: configuredPort !== undefined,
+				port: configuredPort !== undefined ? String(configuredPort) : undefined,
+			};
 		case 'Input Port':
 			const port = await askUserForPort();
 			if (!port) { return doNotRetryBuildingProject; }

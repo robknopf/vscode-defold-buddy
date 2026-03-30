@@ -90,7 +90,25 @@ You can optionally configure the absolute path to the Defold executable or launc
 
 If this setting is present, Defold Buddy will use it to open the current project directly.
 
+You can also configure a fixed editor command port:
+
+```json
+"defoldBuddy.editorPort": 8181
+```
+
+When both settings are present, Defold Buddy launches Defold with `--port 8181` and uses that port for build, hot reload, and debug attach detection before falling back to log discovery.
+
 On Linux, if the setting is not present, Defold Buddy falls back to opening `game.project` via `xdg-open`, which requires your desktop environment to associate `game.project` with Defold.
+
+## Packaging
+
+Use only:
+
+```bash
+npm run package
+```
+
+This repo bundles the extension into `out/extension.js` during packaging. Do not run `npm run compile` in parallel with packaging or use its output for the VSIX, because `tsc` writes raw files into `out/` and can overwrite the bundled runtime.
 
 ## Hot reloading
 

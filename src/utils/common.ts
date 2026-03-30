@@ -75,6 +75,14 @@ export async function showTextDocument(relativePath: vscode.Uri | string, select
 }
 
 import { exec, execFile } from 'child_process';
+
+export function getConfiguredEditorPort(): number | undefined {
+    const configuredPort = vscode.workspace
+        .getConfiguration()
+        .get<number>('defoldBuddy.editorPort', 0);
+    return configuredPort > 0 ? configuredPort : undefined;
+}
+
 export async function openDefoldEditor(relativePath: string, platform: NodeJS.Platform) {
     const absolutePath = await getWorkspacePath(relativePath);
     const configuredPath = vscode.workspace
@@ -83,7 +91,7 @@ export async function openDefoldEditor(relativePath: string, platform: NodeJS.Pl
         .trim();
 
     if (configuredPath) {
-        openDefoldEditorWithConfiguredPath(configuredPath, absolutePath);
+        openDefoldEditorWithConfiguredPath(configuredPath, absolutePath, getConfiguredEditorPort());
         return;
     }
 
@@ -102,8 +110,14 @@ export async function openDefoldEditor(relativePath: string, platform: NodeJS.Pl
     }
 }
 
-function openDefoldEditorWithConfiguredPath(defoldPath: string, absolutePath: vscode.Uri | undefined) {
-    execFile(defoldPath, [absolutePath?.fsPath ?? ''], { cwd: path.dirname(defoldPath) }, (error: any, stdout: any, stderr: any) => {
+function openDefoldEditorWithConfiguredPath(defoldPath: string, absolutePath: vscode.Uri | undefined, editorPort?: number) {
+    const args = new Array<string>();
+    if (editorPort) {
+        args.push('--port', String(editorPort));
+    }
+    args.push(absolutePath?.fsPath ?? '');
+
+    execFile(defoldPath, args, { cwd: path.dirname(defoldPath) }, (error: any, stdout: any, stderr: any) => {
         if (error) {
             console.log(`error: ${error.message}`);
             vscode.window.showErrorMessage(`Failed to open Defold using configured path '${defoldPath}'.`);

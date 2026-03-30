@@ -48,6 +48,12 @@
           "type": "string",
           "default": "",
           "markdownDescription": "Absolute path to the Defold editor executable or launcher script. If set, Defold Buddy will use this path to open the current project."
+        },
+        "defoldBuddy.editorPort": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "markdownDescription": "Optional fixed HTTP command port for the Defold editor. When greater than 0 and `defoldBuddy.editorPath` is set, Defold Buddy launches the editor with `--port` and uses this port for attach/build/hot reload detection before falling back to log discovery."
         }
       }
     },
@@ -188,7 +194,7 @@
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src --ext ts",
-    "package": "vsce package",
+    "package": "rimraf out && vsce package",
     "publish": "vsce publish",
     "publish-pre-release": "vsce publish --pre-release",
     "vscode:prepublish": "npm run esbuild-base -- --minify && npm run build:webview",
