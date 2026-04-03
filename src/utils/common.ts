@@ -83,6 +83,13 @@ export function getConfiguredEditorPort(): number | undefined {
     return configuredPort > 0 ? configuredPort : undefined;
 }
 
+export function getConfiguredEditorStartupTimeoutMs(): number {
+    const configuredTimeout = vscode.workspace
+        .getConfiguration()
+        .get<number>('defoldBuddy.editorStartupTimeoutMs', 15000);
+    return configuredTimeout > 0 ? configuredTimeout : 15000;
+}
+
 export async function openDefoldEditor(relativePath: string, platform: NodeJS.Platform) {
     const absolutePath = await getWorkspacePath(relativePath);
     const configuredPath = vscode.workspace

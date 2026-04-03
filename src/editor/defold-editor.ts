@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 const readline = require('node:readline');
 const { once } = require('node:events');
 import { DefoldEditorLogsRepository } from "../utils/defold-editor-logs-repository";
-import { getConfiguredEditorPort, openDefoldEditor } from '../utils/common';
+import { getConfiguredEditorPort, getConfiguredEditorStartupTimeoutMs, openDefoldEditor } from '../utils/common';
 import { Subject } from 'rxjs';
 import { findRunningDefoldGame } from '../utils/findRunningDefoldGame';
 import WebSocket = require('ws');
@@ -105,6 +105,15 @@ export class DefoldEditor {
 		if (this.showRunningDefoldEditorNotFoundWindow) {
 			const result = await askToOpenDefoldEditorOrInputPortOrShowErrorMessage();
 			if (result.port) { await savePort(this.context, result.port); }
+			if (result.retry && result.port) {
+				const runningPort = await waitForRunningDefoldEditor(result.port, getConfiguredEditorStartupTimeoutMs());
+				if (runningPort) {
+					await savePort(this.context, runningPort);
+					return runningPort;
+				}
+				vscode.window.showErrorMessage(`Defold did not become reachable on port ${result.port}.`);
+				return undefined;
+			}
 			if (result.retry) { return await this.findRunningEditorOrAskToOpenOne(false /* do not detect port */); }
 		}
 	}
@@ -161,6 +170,17 @@ async function isDefoldEditorRunning(port: string): Promise<boolean> {
 	} catch {
 		return false;
 	}
+}
+
+async function waitForRunningDefoldEditor(port: string, timeoutMs: number, retryDelayMs = 500): Promise<string | undefined> {
+	const retries = Math.max(1, Math.ceil(timeoutMs / retryDelayMs));
+	for (let attempt = 0; attempt < retries; attempt++) {
+		if (await isDefoldEditorRunning(port)) {
+			return port;
+		}
+		await new Promise(resolve => setTimeout(resolve, retryDelayMs));
+	}
+	return undefined;
 }
 
 async function extractEditorPortsFrom(logFile: string): Promise<string[]> {

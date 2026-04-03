@@ -54,6 +54,12 @@
           "default": 0,
           "minimum": 0,
           "markdownDescription": "Optional fixed HTTP command port for the Defold editor. When greater than 0 and `defoldBuddy.editorPath` is set, Defold Buddy launches the editor with `--port` and uses this port for attach/build/hot reload detection before falling back to log discovery."
+        },
+        "defoldBuddy.editorStartupTimeoutMs": {
+          "type": "number",
+          "default": 15000,
+          "minimum": 1,
+          "markdownDescription": "How long Defold Buddy should wait for the Defold editor HTTP command port to become reachable after launching the editor."
         }
       }
     },
