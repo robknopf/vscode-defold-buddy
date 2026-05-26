@@ -4,7 +4,7 @@ import { promises as fs } from 'fs';
 const readline = require('node:readline');
 const { once } = require('node:events');
 import { DefoldEditorLogsRepository } from "../utils/defold-editor-logs-repository";
-import { getConfiguredEditorPort, getConfiguredEditorStartupTimeoutMs, openDefoldEditor } from '../utils/common';
+import { getConfiguredEditorPort, getConfiguredEditorStartupTimeoutMs, openDefoldEditor, readWorkspaceFile } from '../utils/common';
 import { Subject } from 'rxjs';
 import { findRunningDefoldGame } from '../utils/findRunningDefoldGame';
 import WebSocket = require('ws');
@@ -74,7 +74,10 @@ export class DefoldEditor {
 			return portOfRunningEditor;
 		}
 		if (detectPort) {
-			portOfRunningEditor = await tryToFindRunningEditorPortFromLogFiles();
+			portOfRunningEditor = await tryToFindRunningEditorPortFromWorkspace();
+			if (!portOfRunningEditor) {
+				portOfRunningEditor = await tryToFindRunningEditorPortFromLogFiles();
+			}
 		}
         await savePort(this.context, portOfRunningEditor);
 		return portOfRunningEditor;
@@ -157,19 +160,31 @@ async function tryToFindRunningEditorPortFromLogFiles(): Promise<string | undefi
 	return undefined; // no running editors found
 }
 
+async function tryToFindRunningEditorPortFromWorkspace(): Promise<string | undefined> {
+	const port = (await readWorkspaceFile('.internal/editor.port'))?.trim();
+	if (!port) { return undefined; }
+	return await isDefoldEditorRunning(port) ? port : undefined;
+}
+
 async function savePort(context: vscode.ExtensionContext, editorPort: string | undefined) {
 	await context.globalState.update('defoldEditorPort', editorPort);
 }
 
 async function isDefoldEditorRunning(port: string): Promise<boolean> {
-	try {
-		const response = await axios.get(`${editorBaseUrl}:${port}/command/`, {
-			timeout: 1500,
-		});
-		return response.status >= 200 && response.status < 300;
-	} catch {
-		return false;
+	for (const path of ['/console', '/command', '/openapi.json']) {
+		try {
+			const response = await axios.get(`${editorBaseUrl}:${port}${path}`, {
+				timeout: 1500,
+			});
+			if (response.status >= 200 && response.status < 300) {
+				return true;
+			}
+		} catch {
+			// Try the next endpoint. Different Defold versions expose different
+			// read-only endpoints while the command POST API is initializing.
+		}
 	}
+	return false;
 }
 
 async function waitForRunningDefoldEditor(port: string, timeoutMs: number, retryDelayMs = 500): Promise<string | undefined> {
